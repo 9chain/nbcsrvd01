@@ -1,0 +1,6 @@
+sdksrv: {username: 111, apikey: 222}
+smtp:
+#  host: smtp.163.com
+#  serveraddr: smtp.163.com:25
+#  user: xxx@xx.com
+  password: yyyyyy  # test

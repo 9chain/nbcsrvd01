@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 )
 
+var handlers = make(map[string]func(params interface{}) (interface{}, *primitives.JSONError))
+
 func InitApi(r *gin.RouterGroup) {
 	r.GET("v1", handleV1)
 	r.POST("v1", handleV1)
@@ -45,36 +47,26 @@ func handleV1(ctx *gin.Context) {
 		return
 	}
 
-	jsonResp, jsonError := HandleV1Request(j)
-
+	jsonResp, jsonError := handleV1Request(j)
 	if jsonError != nil {
 		HandleV2Error(ctx, j, jsonError)
 		return
 	}
 
-	ctx.JSON(200, []byte(jsonResp.String()))
+	ctx.JSON(200, jsonResp)
 }
 
-func HandleV1Request(j *primitives.JSON2Request) (*primitives.JSON2Response, *primitives.JSONError) {
+func handleV1Request(j *primitives.JSON2Request) (*primitives.JSON2Response, *primitives.JSONError) {
 	var resp interface{}
 	var jsonError *primitives.JSONError
 	params := j.Params
-	switch j.Method {
-	case "create-chain":
-		resp, jsonError = handleV1CreateChain(params)
-		break
-	case "create-entry":
-		resp, jsonError = handleV1CreateEntry(params)
-		break
-	case "entry":
-		resp, jsonError = handleV1Entry(params)
-		break
-	case "validate":
-		resp, jsonError = handleV1Validate(params)
-		break
-	default:
-		break
+
+	if f, ok := handlers[j.Method]; ok {
+		resp, jsonError = f(params)
+	} else {
+		jsonError = primitives.NewMethodNotFoundError()
 	}
+
 	if jsonError != nil {
 		return nil, jsonError
 	}
@@ -84,24 +76,4 @@ func HandleV1Request(j *primitives.JSON2Request) (*primitives.JSON2Response, *pr
 	jsonResp.Result = resp
 
 	return jsonResp, nil
-}
-
-// check and send to sdksrvd
-func handleV1CreateChain(params interface{}) (interface{}, *primitives.JSONError) {
-	return gin.H{"message": "success"}, nil
-}
-
-// check and send to sdksrvd
-func handleV1CreateEntry(params interface{}) (interface{}, *primitives.JSONError) {
-	return gin.H{"message": "success"}, nil
-}
-
-// check and send to sdksrvd
-func handleV1Entry(params interface{}) (interface{}, *primitives.JSONError) {
-	return gin.H{"message": "success"}, nil
-}
-
-// check and send to sdksrvd
-func handleV1Validate(params interface{}) (interface{}, *primitives.JSONError) {
-	return gin.H{"message": "success"}, nil
 }
