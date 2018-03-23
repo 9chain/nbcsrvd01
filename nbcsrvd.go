@@ -5,10 +5,12 @@ import (
 	"github.com/9chain/nbcsrvd01/api"
 	"github.com/9chain/nbcsrvd01/config"
 	"github.com/9chain/nbcsrvd01/web"
+	"github.com/9chain/nbcsrvd01/state"
 )
 
 func main() {
 	config.LoadConfig()
+	state.Init()
 
 	r := gin.Default()
 	r.Use(gin.Recovery())

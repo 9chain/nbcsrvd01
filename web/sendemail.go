@@ -5,6 +5,8 @@ import (
 	"strings"
 	"fmt"
 	"github.com/9chain/nbcsrvd01/config"
+	"crypto/md5"
+	"encoding/hex"
 )
 
 const (
@@ -47,4 +49,12 @@ func SendEmail(email *Email) error {
 	}()
 
 	return nil
+}
+
+func encryptWithSalt(plantext []byte,salt []byte) string {
+	hash := md5.New()
+	hash.Write(plantext)
+	hash.Write(salt)
+	sum := hash.Sum(nil)
+	return hex.EncodeToString(sum)
 }

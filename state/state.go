@@ -1,5 +1,7 @@
 package state
 
+import (
+	"github.com/9chain/nbcsrvd01/state/filestate")
 
 var (
 	State GlobalState
@@ -9,11 +11,11 @@ type GlobalState interface {
 	CheckLogin(username, password string) error
 }
 
-func init() {
-	// TODO
-	State = &FileState{
-		users:map[string]User{
-			"hello":User{Username:"hello", Password:"world"},
-		},
+func Init() {
+	s, err := filestate.Init()
+	if err != nil {
+		panic(err)
 	}
+
+	State = s
 }

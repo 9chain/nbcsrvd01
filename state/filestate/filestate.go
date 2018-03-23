@@ -1,4 +1,4 @@
-package state
+package filestate
 
 import (
 	"errors"
@@ -18,4 +18,9 @@ func (s *FileState) CheckLogin(username, password string) error {
 		return nil
 	}
 	return errors.New("invalid username/password")
+}
+
+
+func Init() (*FileState, error) {
+	return &FileState{}, nil
 }

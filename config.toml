@@ -1,0 +1,8 @@
+[sdksrv]
+username = "root"
+apikey = "xxxxxxxxxxxxxxxxxxxxxxx"
+
+[smtp]
+user = "aquariusye@163.com"
+password = "xxxxxxyyy"
+salt = "salt----------------"

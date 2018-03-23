@@ -2,22 +2,23 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"github.com/BurntSushi/toml"
 	"os"
+	"bytes"
 )
 
 type Config struct {
 	SDKSrv struct {
-		Username string `yaml:"username"`
-		ApiKey   string `yaml:"apikey"`
-	} `yaml:"sdksrv"`
+		Username string `toml:"username,omitempty"`
+		ApiKey   string `toml:"apikey,omitempty"`
+	} `toml:"sdksrv,omitempty"`
 	SMTP struct {
-		Host       string `yaml:"host"`
-		ServerAddr string `yaml:"serveraddr"`
-		User       string `yaml:"user"`
-		Password   string `yaml:"password"`
-	} `yaml:"smtp"`
+		Host       string `toml:"host,omitempty"`
+		ServerAddr string `toml:"serveraddr,omitempty"`
+		User       string `toml:"user,omitempty"`
+		Password   string `toml:"password,omitempty"`
+		Salt       string `toml:"salt,omitempty"`
+	} `toml:"smtp,omitempty"`
 }
 
 var (
@@ -25,47 +26,48 @@ var (
 )
 
 const (
-	cfgFileName = "./config.yaml"
+	cfgFileName = "./config.toml"
 )
 
 const defaultConfig = `
-sdksrv:
-  username: superuser
-  apikey: api key
-smtp:
-  host: smtp.163.com
-  serveraddr: smtp.163.com:25
-  user: xxx@xx.com
-  password: xxxxxx
+[sdksrv]
+username = "superuser"
+apikey = "api key"
+[smtp]
+host = "smtp.163.com"
+serveraddr = "smtp.163.com:25"
+user = "xxx@xx.com"
+password = "xxxxxx"
+salt = "salt"
 `
 
-func LoadConfig() {
-	defer func() {
-		bs, _ := yaml.Marshal(Cfg)
-		fmt.Printf("config:\n%s\n", string(bs))
-	}()
-
-	if err := yaml.Unmarshal([]byte(defaultConfig), &Cfg); err != nil {
+func printCfg(flag string, cfg *Config) {
+	var buf bytes.Buffer
+	enc := toml.NewEncoder(&buf)
+	if err := enc.Encode(cfg); err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("default config:\n\t%+v\n", Cfg)
+	fmt.Printf("==========%s================\n%s\n", flag, buf.String())
+}
+
+func LoadConfig() {
+	defer printCfg("final", &Cfg)
+
+	if _, err := toml.Decode(defaultConfig, &Cfg); err != nil {
+		panic(err)
+	}
 
 	if _, err := os.Stat(cfgFileName); err != nil {
 		return
 	}
 
-	source, err := ioutil.ReadFile(cfgFileName)
-	if err != nil {
-		panic(err)
-	}
-
 	var newCfg Config
-	if err := yaml.Unmarshal(source, &newCfg); err != nil {
+	if _, err := toml.DecodeFile(cfgFileName, &newCfg); err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("config from %s:\n\t%+v\n", cfgFileName, newCfg)
+	printCfg(cfgFileName, &newCfg)
 	compareReset(&Cfg, &newCfg)
 }
 
@@ -89,5 +91,8 @@ func compareReset(cfg *Config, newCfg *Config) {
 	}
 	if len(newCfg.SMTP.Password) > 0 {
 		cfg.SMTP.Password = newCfg.SMTP.Password
+	}
+	if len(newCfg.SMTP.Salt) > 0 {
+		cfg.SMTP.Salt = newCfg.SMTP.Salt
 	}
 }
