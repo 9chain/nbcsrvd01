@@ -5,10 +5,46 @@ import (
 	"github.com/9chain/nbcsrvd01/state"
 	"github.com/9chain/nbcsrvd01/web"
 	"github.com/gin-gonic/gin"
+	log "github.com/cihub/seelog"
+	"os"
+	"fmt"
 )
+
+func initSeelog(){
+	cfgPath := config.Cfg.App.SeeLogXml
+	if _, err := os.Stat(cfgPath); err==nil {
+		logger, err := log.LoggerFromConfigAsFile(cfgPath)
+		if err != nil {
+			panic(err)
+		}
+
+		log.ReplaceLogger(logger)
+		return
+	}
+
+	fmt.Println("use default seelog config")
+
+	defaultConfig := `
+<seelog>
+    <outputs formatid="main">
+        <console />
+    </outputs>
+    <formats>
+        <format id="main" format="%l %Date %Time %File:%Line %Msg%n"/>
+    </formats>
+</seelog>`
+	logger, err := log.LoggerFromConfigAsString(defaultConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	log.ReplaceLogger(logger)
+}
 
 func main() {
 	config.LoadConfig()
+	initSeelog()
+
 	state.Init()
 
 	r := gin.Default()

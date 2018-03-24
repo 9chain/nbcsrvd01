@@ -10,6 +10,9 @@ import (
 )
 
 type Config struct {
+	App struct {
+		SeeLogXml string `toml:"seelogXml,omitempty"`
+	}
 	User struct {
 		ConfigDir    string `toml:"configDir,omitempty"`
 		MaxUserFiles int    `toml:"maxUserFiles,omitempty"`
@@ -46,6 +49,9 @@ const (
 )
 
 const defaultConfig = `
+[App]
+seelogXml = "./seelog.xml"
+
 [user]
 configDir = "./userconfig"
 maxUserFiles = 20
