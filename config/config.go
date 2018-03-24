@@ -1,23 +1,39 @@
 package config
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/BurntSushi/toml"
 	"os"
-	"bytes"
+	"reflect"
 )
 
 type Config struct {
+	User struct {
+		ConfigDir    string `toml:"configdir,omitempty"`
+		MaxUserFiles int    `toml:"maxuserfiles,omitempty"`
+	}
+	Session struct {
+		SessionDir string `toml:"sessiondir,omitempty"`
+		MaxAgeMin  int    `toml:"maxageMin,omitempty"`
+		SessionKey string `toml:"sessionkey,omitempty"`
+	}
 	SDKSrv struct {
 		Username string `toml:"username,omitempty"`
 		ApiKey   string `toml:"apikey,omitempty"`
 	} `toml:"sdksrv,omitempty"`
 	SMTP struct {
-		Host       string `toml:"host,omitempty"`
-		ServerAddr string `toml:"serveraddr,omitempty"`
-		User       string `toml:"user,omitempty"`
-		Password   string `toml:"password,omitempty"`
-		Salt       string `toml:"salt,omitempty"`
+		Host               string `toml:"host,omitempty"`
+		ServerAddr         string `toml:"serveraddr,omitempty"`
+		User               string `toml:"user,omitempty"`
+		Password           string `toml:"password,omitempty"`
+		Salt               string `toml:"salt,omitempty"`
+		TimeoutMin         int    `toml:"timeoutmin,omitempty"`
+		PageForgetPassord  string `toml:"pageForgetPassword,omitempty"`
+		ConfirmUrl         string `toml:"confirmUrl,omitempty"`
+		ActiveTitle        string `toml:"activeTitle,omitempty"`
+		ResetPasswordTitle string `toml:"resetPasswordTitle,omitempty"`
 	} `toml:"smtp,omitempty"`
 }
 
@@ -30,15 +46,30 @@ const (
 )
 
 const defaultConfig = `
+[user]
+configdir = "./userconfig"
+maxuserfiles = 20
+
+[session]
+sessiondir = "/tmp/session_nbcsrv01"
+maxageMin = 600
+sessionkey = "session key"
+
 [sdksrv]
 username = "superuser"
 apikey = "api key"
+
 [smtp]
 host = "smtp.163.com"
 serveraddr = "smtp.163.com:25"
 user = "xxx@xx.com"
 password = "xxxxxx"
 salt = "salt"
+timeoutmin = 120
+pageForgetPassword = "/public/resetpassword.html"
+confirmUrl = "http://localhost:8080/panel"
+activeTitle = "注册确认邮件"
+resetPasswordTitle = "重设密码确认邮件"
 `
 
 func printCfg(flag string, cfg *Config) {
@@ -54,7 +85,8 @@ func printCfg(flag string, cfg *Config) {
 func LoadConfig() {
 	defer printCfg("final", &Cfg)
 
-	if _, err := toml.Decode(defaultConfig, &Cfg); err != nil {
+	var cfg Config
+	if _, err := toml.Decode(defaultConfig, &cfg); err != nil {
 		panic(err)
 	}
 
@@ -68,31 +100,53 @@ func LoadConfig() {
 	}
 
 	printCfg(cfgFileName, &newCfg)
-	compareReset(&Cfg, &newCfg)
+
+	o, n := toMap(cfg), toMap(newCfg)
+	walk(o, n)
+
+	bs, _ := json.Marshal(o)
+	if err := json.Unmarshal(bs, &Cfg); err != nil {
+		panic(err)
+	}
 }
 
-// TODO change a better way
-func compareReset(cfg *Config, newCfg *Config) {
-	if len(newCfg.SDKSrv.Username) > 0 {
-		cfg.SDKSrv.Username = newCfg.SDKSrv.Username
-	}
-	if len(newCfg.SDKSrv.ApiKey) > 0 {
-		cfg.SDKSrv.ApiKey = newCfg.SDKSrv.ApiKey
-	}
+func toMap(obj interface{}) map[string]interface{} {
+	bs, _ := json.Marshal(obj)
+	var res map[string]interface{}
+	json.Unmarshal(bs, &res)
+	return res
+}
 
-	if len(newCfg.SMTP.Host) > 0 {
-		cfg.SMTP.Host = newCfg.SMTP.Host
-	}
-	if len(newCfg.SMTP.ServerAddr) > 0 {
-		cfg.SMTP.ServerAddr = newCfg.SMTP.ServerAddr
-	}
-	if len(newCfg.SMTP.User) > 0 {
-		cfg.SMTP.User = newCfg.SMTP.User
-	}
-	if len(newCfg.SMTP.Password) > 0 {
-		cfg.SMTP.Password = newCfg.SMTP.Password
-	}
-	if len(newCfg.SMTP.Salt) > 0 {
-		cfg.SMTP.Salt = newCfg.SMTP.Salt
+func walk(o map[string]interface{}, n map[string]interface{}) {
+	for k, v := range o {
+		if "map[string]interface {}" == reflect.TypeOf(v).String() {
+			walk(v.(map[string]interface{}), n[k].(map[string]interface{}))
+			continue
+		}
+
+		nv, ok := n[k]
+		if !ok {
+			continue
+		}
+
+		switch nv.(type) {
+		case string:
+			if nv != "" {
+				fmt.Println("reset", k, v, nv)
+				o[k] = nv
+			}
+
+			break
+		case float64:
+			if int(nv.(float64)) != 0 {
+				fmt.Println("reset", k, v, nv)
+				o[k] = nv
+			}
+			break
+		default:
+			msg := fmt.Sprintf("not support type: %s yet!!!!!!", reflect.TypeOf(v).String())
+			panic(msg)
+			break
+		}
 	}
 }

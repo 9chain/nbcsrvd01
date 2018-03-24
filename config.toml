@@ -6,3 +6,10 @@ apikey = "xxxxxxxxxxxxxxxxxxxxxxx"
 user = "aquariusye@163.com"
 password = "xxxxxxyyy"
 salt = "salt----------------"
+
+[user]
+maxuserfiles = 10
+
+[session]
+maxage = 7200
+sessionkey = "session key ======"

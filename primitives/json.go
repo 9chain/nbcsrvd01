@@ -1,4 +1,5 @@
 package primitives
+
 import (
 	"encoding/json"
 	"fmt"
@@ -103,4 +104,3 @@ func (j *JSONError) Error() string {
 	}
 	return j.Message + ": " + str
 }
-

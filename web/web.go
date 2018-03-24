@@ -1,25 +1,68 @@
 package web
 
 import (
-	"github.com/gin-gonic/gin"
-	"io/ioutil"
-	"github.com/9chain/nbcsrvd01/primitives"
-	"github.com/gorilla/sessions"
+	"errors"
 	"fmt"
+	"github.com/9chain/nbcsrvd01/config"
+	"github.com/9chain/nbcsrvd01/primitives"
+	"github.com/9chain/nbcsrvd01/state"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
+	"os"
+	"time"
 )
 
-//var store = sessions.NewCookieStore([]byte("something-very-secret"))
-var handlers = make(map[string]func(params interface{}) (interface{}, *primitives.JSONError))
-var store *sessions.FilesystemStore
+type JSONError = primitives.JSONError
+type JSON2Request = primitives.JSON2Request
+type JSON2Response = primitives.JSON2Response
 
-func InitWeb(r *gin.RouterGroup) {
-	store = sessions.NewFilesystemStore("/tmp/nbcsrvd_session", []byte("secret"))
-	r.GET("v1", handleV1)
-	r.POST("v1", handleV1)
-	r.GET("v1/confirm", handleV1Confirm)
+var (
+	store    *sessions.FilesystemStore
+	handlers = make(map[string]func(ctx *gin.Context, params interface{}) (interface{}, *JSONError))
+)
+
+// 初始化session
+func initSession() {
+	sessionCfg := config.Cfg.Session
+	dir, key := sessionCfg.SessionDir, sessionCfg.SessionKey
+	if _, err := os.Stat(dir); err != nil {
+		fmt.Println("mk sesison dir", dir)
+		if err := os.Mkdir(dir, os.ModePerm); err != nil {
+			panic("mkdir for session fail " + err.Error())
+		}
+	}
+	store = sessions.NewFilesystemStore(dir, []byte(key))
 }
 
-func handleV1Error(ctx *gin.Context, j *primitives.JSON2Request, err *primitives.JSONError) {
+func InitWeb(r *gin.RouterGroup) {
+	// 初始化session
+	initSession()
+
+	// 标准json2rpc处理
+	r.POST("v1", func(ctx *gin.Context) {
+		j, err := parseJSON2Request(ctx)
+		if err != nil {
+			handleV1Error(ctx, nil, primitives.NewInvalidRequestError())
+			return
+		}
+
+		jsonResp, jsonError := handleV1Request(ctx, j)
+		if jsonError != nil {
+			handleV1Error(ctx, j, jsonError)
+			return
+		}
+
+		ctx.JSON(200, jsonResp)
+	})
+
+	// 点击　注册、忘记密码邮件确认连接
+	r.GET("v1/confirm", handleV1Confirm)
+
+	// 忘记密码：重置
+	r.POST("v1/resetpassword", handleForgetResetPassword)
+}
+
+func handleV1Error(ctx *gin.Context, j *JSON2Request, err *JSONError) {
 	resp := primitives.NewJSON2Response()
 	if j != nil {
 		resp.ID = j.ID
@@ -31,55 +74,119 @@ func handleV1Error(ctx *gin.Context, j *primitives.JSON2Request, err *primitives
 	ctx.JSON(200, resp)
 }
 
-func handleV1(ctx *gin.Context) {
-	body, err := ioutil.ReadAll(ctx.Request.Body)
-	if err != nil {
-		panic(err)
-		return
-	}
-
-	j, err := primitives.ParseJSON2Request(body)
+func handleForgetResetPassword(ctx *gin.Context) {
+	j, err := parseJSON2Request(ctx)
 	if err != nil {
 		handleV1Error(ctx, nil, primitives.NewInvalidRequestError())
 		return
 	}
 
-	jsonResp, jsonError := handleV1Request(j)
-	if jsonError != nil {
-		handleV1Error(ctx, j, jsonError)
+	message, err := decodeMessage(ctx)
+	if err != nil {
+		handleV1Error(ctx, j, primitives.NewCustomInternalError(err.Error()))
 		return
 	}
 
+	if message.Action != "forget" {
+		handleV1Error(ctx, j, primitives.NewCustomInternalError("invalid action"))
+		return
+	}
+
+	type regParam struct {
+		Password string `json:"password"`
+	}
+
+	p := new(regParam)
+	if err := MapToObject(j.Params, p); err != nil {
+		handleV1Error(ctx, j, primitives.NewCustomInternalError(err.Error()))
+		return
+	}
+
+	if !(len(p.Password) >= 4 && len(p.Password) <= 32) {
+		handleV1Error(ctx, j, primitives.NewCustomInternalError("invalid password"))
+		return
+	}
+
+	if err := state.State.UpdateUserPassword(message.Username, p.Password); err != nil {
+		handleV1Error(ctx, j, primitives.NewCustomInternalError(err.Error()))
+		return
+	}
+
+	jsonResp := primitives.NewJSON2Response()
+	jsonResp.ID = j.ID
+	jsonResp.Result = gin.H{"message": "success"}
 	ctx.JSON(200, jsonResp)
 }
 
-func handleV1Confirm(ctx *gin.Context) {
-	//body, err := ioutil.ReadAll(ctx.Request.Body)
-	//if err != nil {
-	//	panic(err)
-	//	return
-	//}
-
-	//_ = body
-	fmt.Printf("=== %+v\n", ctx.Params)
-	action := ctx.Query("action")		// register, forget, reset
+// 解析、验证content是否合法
+func decodeMessage(ctx *gin.Context) (*ConfirmMessage, error) {
 	content := ctx.Query("content")
-	fmt.Println(handleV1Confirm, action, content)
-	_ = content
-	// TODO validate
 
-	// TODO if is forget-password, redirect to reset page
+	smtpCfg := config.Cfg.SMTP
+	var message ConfirmMessage
 
-	ctx.JSON(200, gin.H{"message":"success"})
+	// 签名验证
+	if err := decodeContent(content, []byte(smtpCfg.Salt), &message); err != nil {
+		return nil, err
+	}
+
+	//　超时验证
+	now := time.Now()
+	if now.After(message.Timestamp.Add(time.Duration(smtpCfg.TimeoutMin) * time.Minute)) {
+		return nil, errors.New("timeout")
+	}
+
+	return &message, nil
 }
 
-func handleV1Request(j *primitives.JSON2Request) (*primitives.JSON2Response, *primitives.JSONError) {
-	var resp interface{}
-	var jsonError *primitives.JSONError
-	params := j.Params
+// 注册、忘记密码　邮件连接点击　(GET)
+func handleV1Confirm(ctx *gin.Context) {
+	message, err := decodeMessage(ctx)
+	if err != nil {
+		ctx.AbortWithError(400, err)
+		return
+	}
 
+	switch message.Action {
+	case "register":
+		// 注册邮件确认
+		stat, err := state.State.GetUserState(message.Username)
+		if err != nil {
+			ctx.AbortWithError(400, err)
+			return
+		}
+
+		if stat > 0 {
+			ctx.AbortWithError(400, errors.New("already register"))
+			return
+		}
+
+		// 修改状态为已经确认(1)
+		if err := state.State.UpdateUserState(message.Username, 1); err != nil {
+			ctx.AbortWithError(400, err)
+			return
+		}
+
+		ctx.Redirect(302, "/") // 重定向到登陆页面 TODO
+		return
+	case "forget":
+		// 忘记密码邮件确认： 重定向到修改密码页面
+		url := fmt.Sprintf("%s?%s", config.Cfg.SMTP.PageForgetPassord, ctx.Request.URL.RawQuery)
+		ctx.Redirect(302, url)
+		return
+	default:
+		ctx.AbortWithError(400, errors.New("invalid action "+message.Action))
+		return
+	}
+}
+
+func handleV1Request(ctx *gin.Context, j *JSON2Request) (*JSON2Response, *JSONError) {
+	var resp interface{}
+	var jsonError *JSONError
+
+	//　查找、调用　处理函数
 	if f, ok := handlers[j.Method]; ok {
-		resp, jsonError = f(params)
+		resp, jsonError = f(ctx, j.Params)
 	} else {
 		jsonError = primitives.NewMethodNotFoundError()
 	}
@@ -94,4 +201,3 @@ func handleV1Request(j *primitives.JSON2Request) (*primitives.JSON2Response, *pr
 
 	return jsonResp, nil
 }
-

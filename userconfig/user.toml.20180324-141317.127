@@ -1,0 +1,24 @@
+[helloshiki]
+  Username = "helloshiki"
+  Password = "xxxxxyyy00"
+  Email = "xx@qq.com"
+  ApiKey = "fa2991214668aa00cf92089db1703844"
+  State = 0
+  Created = 0001-01-01T00:00:00Z
+  Modified = 2018-03-24T02:34:18Z
+
+  [[helloshiki.Chains]]
+    ChainName = "xxx"
+
+  [[helloshiki.Chains]]
+    ChainName = "yyy"
+
+[kitty]
+  Username = "kitty"
+  Password = "xxxxx"
+  Email = "yyyyy@qq.com"
+  ApiKey = "2a5a660c1e35a508e63c2c9ac410b9b2"
+  State = 0
+  Chains = []
+  Created = 2018-03-23T11:16:39Z
+  Modified = 2018-03-24T01:44:56Z

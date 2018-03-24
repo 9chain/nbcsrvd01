@@ -43,4 +43,3 @@ func NewCustomInternalError(data interface{}) *JSONError {
 func NewCustomInvalidParamsError(data interface{}) *JSONError {
 	return NewJSONError(-32602, "Invalid params", data)
 }
-
