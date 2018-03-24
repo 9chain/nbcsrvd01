@@ -125,7 +125,7 @@ func handleV1Register(ctx *gin.Context, params interface{}) (interface{}, *JSONE
 
 		now := time.Now()
 		// 两次发送时间间隔
-		if now.Before(t.Add(time.Duration(smtpCfg.TimeoutMin) * time.Minute)) {
+		if now.Before(t.Add(2 * time.Minute)) {
 			return nil, primitives.NewCustomInternalError("wait a minute")
 		}
 
@@ -172,7 +172,7 @@ func handleV1ForgetPassword(ctx *gin.Context, params interface{}) (interface{}, 
 	smtpCfg := config.Cfg.SMTP
 
 	// 两次发送时间间隔
-	if now.Before(t.Add(time.Duration(smtpCfg.TimeoutMin) * time.Minute)) {
+	if now.Before(t.Add(2 * time.Minute)) {
 		return nil, primitives.NewCustomInternalError("wait a minute")
 	}
 

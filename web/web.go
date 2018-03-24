@@ -143,8 +143,12 @@ func decodeMessage(ctx *gin.Context) (*ConfirmMessage, error) {
 func handleV1Confirm(ctx *gin.Context) {
 	message, err := decodeMessage(ctx)
 	if err != nil {
-		ctx.AbortWithError(400, err)
+		ctx.Redirect(302, "/") // 重定向到登陆页面 TODO
 		return
+	}
+
+	redirectIndex := func() {
+		ctx.Redirect(302, "/") // 重定向到登陆页面 TODO
 	}
 
 	switch message.Action {
@@ -152,22 +156,22 @@ func handleV1Confirm(ctx *gin.Context) {
 		// 注册邮件确认
 		stat, err := state.State.GetUserState(message.Username)
 		if err != nil {
-			ctx.AbortWithError(400, err)
+			redirectIndex()
 			return
 		}
 
 		if stat > 0 {
-			ctx.AbortWithError(400, errors.New("already register"))
+			redirectIndex()
 			return
 		}
 
 		// 修改状态为已经确认(1)
 		if err := state.State.UpdateUserState(message.Username, 1); err != nil {
-			ctx.AbortWithError(400, err)
+			redirectIndex()
 			return
 		}
 
-		ctx.Redirect(302, "/") // 重定向到登陆页面 TODO
+		redirectIndex()
 		return
 	case "forget":
 		// 忘记密码邮件确认： 重定向到修改密码页面
@@ -175,7 +179,7 @@ func handleV1Confirm(ctx *gin.Context) {
 		ctx.Redirect(302, url)
 		return
 	default:
-		ctx.AbortWithError(400, errors.New("invalid action "+message.Action))
+		redirectIndex()
 		return
 	}
 }

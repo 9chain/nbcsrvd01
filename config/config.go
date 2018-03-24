@@ -11,25 +11,25 @@ import (
 
 type Config struct {
 	User struct {
-		ConfigDir    string `toml:"configdir,omitempty"`
-		MaxUserFiles int    `toml:"maxuserfiles,omitempty"`
+		ConfigDir    string `toml:"configDir,omitempty"`
+		MaxUserFiles int    `toml:"maxUserFiles,omitempty"`
 	}
 	Session struct {
-		SessionDir string `toml:"sessiondir,omitempty"`
-		MaxAgeMin  int    `toml:"maxageMin,omitempty"`
-		SessionKey string `toml:"sessionkey,omitempty"`
+		SessionDir string `toml:"sessionDir,omitempty"`
+		MaxAgeMin  int    `toml:"maxAgeMin,omitempty"`
+		SessionKey string `toml:"sessionKey,omitempty"`
 	}
 	SDKSrv struct {
 		Username string `toml:"username,omitempty"`
-		ApiKey   string `toml:"apikey,omitempty"`
+		ApiKey   string `toml:"apiKey,omitempty"`
 	} `toml:"sdksrv,omitempty"`
 	SMTP struct {
 		Host               string `toml:"host,omitempty"`
-		ServerAddr         string `toml:"serveraddr,omitempty"`
+		ServerAddr         string `toml:"serverAddr,omitempty"`
 		User               string `toml:"user,omitempty"`
 		Password           string `toml:"password,omitempty"`
 		Salt               string `toml:"salt,omitempty"`
-		TimeoutMin         int    `toml:"timeoutmin,omitempty"`
+		TimeoutMin         int    `toml:"timeoutMin,omitempty"`
 		PageForgetPassord  string `toml:"pageForgetPassword,omitempty"`
 		ConfirmUrl         string `toml:"confirmUrl,omitempty"`
 		ActiveTitle        string `toml:"activeTitle,omitempty"`
@@ -47,25 +47,25 @@ const (
 
 const defaultConfig = `
 [user]
-configdir = "./userconfig"
-maxuserfiles = 20
+configDir = "./userconfig"
+maxUserFiles = 20
 
 [session]
-sessiondir = "/tmp/session_nbcsrv01"
+sessionDir = "/tmp/session_nbcsrv01"
 maxageMin = 600
-sessionkey = "session key"
+sessionKey = "session key"
 
 [sdksrv]
 username = "superuser"
-apikey = "api key"
+apiKey = "api key"
 
 [smtp]
 host = "smtp.163.com"
-serveraddr = "smtp.163.com:25"
+serverAddr = "smtp.163.com:25"
 user = "xxx@xx.com"
 password = "xxxxxx"
 salt = "salt"
-timeoutmin = 120
+timeoutMin = 120
 pageForgetPassword = "/public/resetpassword.html"
 confirmUrl = "http://localhost:8080/panel"
 activeTitle = "注册确认邮件"
