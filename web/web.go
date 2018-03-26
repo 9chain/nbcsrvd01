@@ -107,10 +107,19 @@ func handleForgetResetPassword(ctx *gin.Context) {
 		return
 	}
 
-	if err := state.State.UpdateUserPassword(message.Username, p.Password); err != nil {
+	var user User
+	db := state.DB
+	if err := db.Take(&user, "username=?", message.Username).Error; err != nil {
 		handleV1Error(ctx, j, primitives.NewCustomInternalError(err.Error()))
 		return
 	}
+
+	if err := db.Model(&user).Updates(User{Password:p.Password, UpdatedAt:time.Now()}).Error; err != nil {
+		handleV1Error(ctx, j, primitives.NewCustomInternalError(err.Error()))
+		return
+	}
+
+	state.BackupUserConfig()
 
 	jsonResp := primitives.NewJSON2Response()
 	jsonResp.ID = j.ID
@@ -154,22 +163,25 @@ func handleV1Confirm(ctx *gin.Context) {
 	switch message.Action {
 	case "register":
 		// 注册邮件确认
-		stat, err := state.State.GetUserState(message.Username)
-		if err != nil {
+		var user User
+		db := state.DB
+		if err := db.Take(&user, "username=?", message.Username).Error; err != nil {
 			redirectIndex()
 			return
 		}
 
-		if stat > 0 {
+		if user.State > 0 {
 			redirectIndex()
 			return
 		}
 
 		// 修改状态为已经确认(1)
-		if err := state.State.UpdateUserState(message.Username, 1); err != nil {
+		if err := db.Model(&user).Updates(User{State:1, UpdatedAt:time.Now()}).Error; err != nil {
 			redirectIndex()
 			return
 		}
+
+		state.BackupUserConfig()
 
 		redirectIndex()
 		return

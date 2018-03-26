@@ -5,3 +5,4 @@ import:
 - package: github.com/gorilla/sessions
 - package: github.com/BurntSushi/toml
 - package: github.com/cihub/seelog
+- package: github.com/jinzhu/gorm
