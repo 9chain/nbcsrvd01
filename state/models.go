@@ -6,11 +6,11 @@ import (
 
 type User struct {
 	ID        uint
-	Username string
-	Password string
-	Email string
-	ApiKey string
-	State int
+	Username  string
+	Password  string
+	Email     string
+	ApiKey    string
+	State     int
 	EmailedAt time.Time
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -19,11 +19,10 @@ type User struct {
 
 type UserChain struct {
 	UserID uint
-	Chain string
+	Chain  string
 }
 
 type Record struct {
-	ID uint
+	ID    uint
 	Chain string
 }
-

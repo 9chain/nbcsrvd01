@@ -114,7 +114,7 @@ func handleForgetResetPassword(ctx *gin.Context) {
 		return
 	}
 
-	if err := db.Model(&user).Updates(User{Password:p.Password, UpdatedAt:time.Now()}).Error; err != nil {
+	if err := db.Model(&user).Updates(User{Password: p.Password, UpdatedAt: time.Now()}).Error; err != nil {
 		handleV1Error(ctx, j, primitives.NewCustomInternalError(err.Error()))
 		return
 	}
@@ -176,7 +176,7 @@ func handleV1Confirm(ctx *gin.Context) {
 		}
 
 		// 修改状态为已经确认(1)
-		if err := db.Model(&user).Updates(User{State:1, UpdatedAt:time.Now()}).Error; err != nil {
+		if err := db.Model(&user).Updates(User{State: 1, UpdatedAt: time.Now()}).Error; err != nil {
 			redirectIndex()
 			return
 		}

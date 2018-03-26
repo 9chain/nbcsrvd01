@@ -1,18 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"github.com/9chain/nbcsrvd01/config"
 	"github.com/9chain/nbcsrvd01/state"
 	"github.com/9chain/nbcsrvd01/web"
-	"github.com/gin-gonic/gin"
 	log "github.com/cihub/seelog"
+	"github.com/gin-gonic/gin"
 	"os"
-	"fmt"
 )
 
-func initSeelog(){
+func initSeelog() {
 	cfgPath := config.Cfg.App.SeeLogXml
-	if _, err := os.Stat(cfgPath); err==nil {
+	if _, err := os.Stat(cfgPath); err == nil {
 		logger, err := log.LoggerFromConfigAsFile(cfgPath)
 		if err != nil {
 			panic(err)

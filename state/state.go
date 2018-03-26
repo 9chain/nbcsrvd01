@@ -1,18 +1,18 @@
 package state
 
 import (
-	"github.com/jinzhu/gorm"
-	_  "github.com/jinzhu/gorm/dialects/sqlite"
-	"fmt"
-	"time"
 	"bytes"
-	"github.com/BurntSushi/toml"
-	"path"
+	"fmt"
 	"github.com/9chain/nbcsrvd01/config"
-	"os"
+	"github.com/BurntSushi/toml"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"io/ioutil"
+	"os"
+	"path"
 	"path/filepath"
 	"sort"
+	"time"
 )
 
 var (
@@ -44,13 +44,13 @@ func BackupUserConfig() {
 	}
 
 	type backupCfg struct {
-		users []User
+		users  []User
 		chains []UserChain
 	}
 	var buf bytes.Buffer
 	enc := toml.NewEncoder(&buf)
-	if err := enc.Encode(backupCfg{users:users, chains:chains}); err != nil {
-		fmt.Println( err)
+	if err := enc.Encode(backupCfg{users: users, chains: chains}); err != nil {
+		fmt.Println(err)
 		return
 	}
 
@@ -72,7 +72,6 @@ func BackupUserConfig() {
 
 	clearBackupFiles()
 }
-
 
 type stringSlice []string
 

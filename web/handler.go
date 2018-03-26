@@ -136,11 +136,11 @@ func handleV1Register(ctx *gin.Context, params interface{}) (interface{}, *JSONE
 	case -1: // not found
 		// 写数据库
 		newUser := User{
-			Username:p.Username,
-			Password:p.Password,
-			Email:p.Email,
-			ApiKey:genRandomApiKey(),
-			EmailedAt:time.Now(),
+			Username:  p.Username,
+			Password:  p.Password,
+			Email:     p.Email,
+			ApiKey:    genRandomApiKey(),
+			EmailedAt: time.Now(),
 		}
 
 		if err := db.Create(&newUser).Error; err != nil {
@@ -161,7 +161,7 @@ func handleV1Register(ctx *gin.Context, params interface{}) (interface{}, *JSONE
 			return nil, primitives.NewCustomInternalError("wait a minute")
 		}
 
-		if err := db.Model(&user).Updates(User{EmailedAt:time.Now()}).Error; err != nil {
+		if err := db.Model(&user).Updates(User{EmailedAt: time.Now()}).Error; err != nil {
 			return nil, primitives.NewCustomInternalError(err.Error())
 		}
 
@@ -212,7 +212,7 @@ func handleV1ForgetPassword(ctx *gin.Context, params interface{}) (interface{}, 
 		return nil, primitives.NewCustomInternalError("wait a minute")
 	}
 
-	if err := db.Model(&user).Updates(User{EmailedAt:time.Now()}).Error; err != nil {
+	if err := db.Model(&user).Updates(User{EmailedAt: time.Now()}).Error; err != nil {
 		return nil, primitives.NewCustomInternalError(err.Error())
 	}
 
@@ -269,7 +269,7 @@ func handleV1ResetPassword(ctx *gin.Context, params interface{}) (interface{}, *
 		return gin.H{"message": "success"}, nil
 	}
 
-	if err := db.Model(&user).Updates(User{Password:password, UpdatedAt:time.Now()}).Error; err != nil {
+	if err := db.Model(&user).Updates(User{Password: password, UpdatedAt: time.Now()}).Error; err != nil {
 		return nil, primitives.NewCustomInternalError(err.Error())
 	}
 	state.BackupUserConfig()
@@ -306,7 +306,7 @@ func handleV1ResetApiKey(ctx *gin.Context, params interface{}) (interface{}, *JS
 		return nil, primitives.NewCustomInternalError(err.Error())
 	}
 
-	if err := db.Model(&user).Updates(User{ApiKey:genRandomApiKey(), UpdatedAt:time.Now()}).Error; err != nil {
+	if err := db.Model(&user).Updates(User{ApiKey: genRandomApiKey(), UpdatedAt: time.Now()}).Error; err != nil {
 		return nil, primitives.NewCustomInternalError(err.Error())
 	}
 	state.BackupUserConfig()

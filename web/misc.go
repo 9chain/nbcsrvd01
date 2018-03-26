@@ -1,16 +1,15 @@
 package web
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"github.com/9chain/nbcsrvd01/primitives"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
-	"encoding/json"
-	"fmt"
-	"time"
-	"crypto/md5"
-	"encoding/hex"
 	"math/rand"
-
+	"time"
 )
 
 // 解析json2rpc参数
@@ -27,7 +26,6 @@ func parseJSON2Request(ctx *gin.Context) (*JSON2Request, error) {
 
 	return j, nil
 }
-
 
 func MapToObject(source interface{}, dst interface{}) error {
 	b, err := json.Marshal(source)
