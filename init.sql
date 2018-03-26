@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users(
 
 INSERT OR IGNORE into users (username, password, email, api_key) values ("kitty", "kitty", "329365307@qq.com", "apikey");
 
-CREATE TABLE IF NOT EXISTS userchains(
+CREATE TABLE IF NOT EXISTS user_chains(
   userid  INTEGER NOT NULL DEFAULT 0,
   chain VARCHAR(64) NOT NULL DEFAULT "",
 	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
