@@ -27,6 +27,7 @@ func Init() {
 
 	db.LogMode(true)
 	DB = db
+
 }
 
 func BackupUserConfig() {

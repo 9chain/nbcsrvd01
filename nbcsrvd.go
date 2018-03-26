@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/9chain/nbcsrvd01/api"
 	"github.com/9chain/nbcsrvd01/config"
 	"github.com/9chain/nbcsrvd01/state"
 	"github.com/9chain/nbcsrvd01/web"
@@ -56,6 +57,7 @@ func main() {
 	})
 
 	web.InitWeb(r.Group("web"))
+	api.InitApi(r.Group("api"))
 
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
